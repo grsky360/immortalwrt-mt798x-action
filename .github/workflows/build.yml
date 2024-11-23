@@ -1,0 +1,18 @@
+on:
+  workflow_dispatch:
+    inputs:
+      devide: 
+        required: false
+        type: choice
+        options:
+          - xiaomi_mi-router-wr30u-112m
+          - xiaomi_mi-router-wr30u-stock
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: test
+        run: |
+          echo 'test'
+  
