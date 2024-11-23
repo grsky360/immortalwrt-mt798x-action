@@ -60,7 +60,7 @@ jobs:
           echo 'start configure device'
           cp -f defconfig/mt7981-ax3000.config .config
           sed -Eei 's/(CONFIG_TARGET_DEVICE_mediatek.*)=y/\1=n/g' .config
-          sed -Eei 's/(CONFIG_TARGET_DEVICE_mediatek_mt7981_DEVICE_${{ inputs.device }})=n/\1=y/g'
+          sed -Eei 's/(CONFIG_TARGET_DEVICE_mediatek_mt7981_DEVICE_${{ inputs.device }})=n/\1=y/g' .config
           echo 'finish configure device'
 
       - name: build
