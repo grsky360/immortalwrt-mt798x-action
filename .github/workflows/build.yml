@@ -1,18 +1,27 @@
 on:
   workflow_dispatch:
     inputs:
+      repo:
+        description: repo
+        required: true
+        type: choice
+        options:
+          - padavanonly/immortalwrt-mt798x-23.05
+          - padavanonly/immortalwrt-mt798x
+          - hanwckf/immortalwrt-mt798x
       device:
         description: device
         required: true
         type: choice
         options:
-          - xiaomi_mi-router-wr30u-112m
-          - xiaomi_mi-router-wr30u-stock
+          - xiaomi_redmi-router-ax6000
       ref-version:
         description: rev version
         required: false
-        default: openwrt-21.02
+        default: ""
         type: string
+      prefer-config:
+        default: "mt7986-ax6000-mtwifi-cfg.config"
 
 env:
   TZ: Asia/Shanghai
@@ -37,7 +46,11 @@ jobs:
         working-directory: ${{ env.WORKSPACE }}
         run: |
           echo 'start clone source'
-          git clone --depth=1 -b ${{ inputs.ref-version }} https://github.com/hanwckf/immortalwrt-mt798x.git openwrt
+          ref_version='${{ inputs.ref-version }}'
+          if [ "$ref_version" != "" ]; then
+            ref_version="-b $ref_version"
+          fi
+          git clone --depth=1 $ref_version https://github.com/${{ inputs.repo }}.git openwrt
           echo 'finish clone source'
 
       - name: configure feeds
@@ -58,17 +71,29 @@ jobs:
         working-directory: ${{ env.WORKSPACE }}/openwrt
         run: |
           echo 'start configure device'
-          cp -f defconfig/mt7981-ax3000.config .config
+          cp -f defconfig/${{ inputs.prefer-config }} .config
           sed -Ei 's/(CONFIG_TARGET_DEVICE_mediatek.*)=y/\1=n/g' .config
-          sed -Ei 's/(CONFIG_TARGET_DEVICE_mediatek_mt7981_DEVICE_${{ inputs.device }})=n/\1=y/g' .config
+          sed -Ei 's/(CONFIG_TARGET_DEVICE_mediatek_mt7986_DEVICE_${{ inputs.device }})=n/\1=y/g' .config
           cat .config
           echo 'finish configure device'
+
+      - name: download package
+        working-directory: ${{ env.WORKSPACE }}/openwrt
+        run: |
+          echo 'start download package'
+          make defconfig
+          make download -j8
+          echo 'finish download package'
 
       - name: build
         working-directory: ${{ env.WORKSPACE }}/openwrt
         run: |
           echo 'start build'
-          make defconfig
-          make download -j8
           make -j$(nproc) || make -j1 || make -j1 V=s
           echo 'finish build'
+      
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ImmortalWrt
+          path: ${{ env.WORKSPACE }}/openwrt/bin/targets
