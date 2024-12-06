@@ -56,19 +56,9 @@ jobs:
       - name: configure device (defconfig)
         working-directory: ${{ env.WORKSPACE }}/openwrt
         run: |
-          cp -f defconfig/${{ inputs.prefer-config }} .config
-          sed -Ei 's/(CONFIG_TARGET_MULTI_PROFILE)=y/\1=n/g' .config
-          # sed -Ei 's/(CONFIG_TARGET_DEVICE_mediatek.*)=y/\1=n/g' .config
-          # sed -Ei 's/(CONFIG_TARGET_DEVICE_mediatek_mt7986_DEVICE_${{ inputs.device }})=n/\1=y/g' .config
-          echo 'CONFIG_IB=y' >> .config
-          echo 'CONFIG_IB_STANDALONE=y' >> .config
-          echo 'CONFIG_SDK=y' >> .config
+          echo 'CONFIG_TARGET_mediatek=y' >> .config
+          echo 'CONFIG_TARGET_mediatek_mt7986=y' >> .config
           echo 'CONFIG_MAKE_TOOLCHAIN=y' >> .config
-          # echo 'CONFIG_ALL_NONSHARED=y' >> .config
-          # echo 'CONFIG_ALL_KMODS=y' >> .config
-          # echo 'CONFIG_ALL=y' >> .config
-          # sed -Ei 's/# (CONFIG_PACKAGE_.*?) is not set/\1=y/g' .config
-          # echo 'CONFIG_TARGET_PROFILE="DEVICE_xiaomi_redmi-router-ax6000"' >> .config
           make defconfig
           cat .config
 
@@ -83,7 +73,8 @@ jobs:
       - name: build
         working-directory: ${{ env.WORKSPACE }}/openwrt
         run: |
-          make -j$(nproc) || make -j1 V=s
+          make tools/install -j$(nproc) || make tools/install -j1 V=s
+          make toolchain/install -j$(nproc) || make toolchain/install -j1 V=s
 
       - name: upload
         uses: actions/upload-artifact@v4
