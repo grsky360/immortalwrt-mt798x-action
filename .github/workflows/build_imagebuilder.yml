@@ -62,8 +62,8 @@ jobs:
           sed -Ei 's/(CONFIG_TARGET_DEVICE_mediatek_mt7986_DEVICE_${{ inputs.device }})=n/\1=y/g' .config
           echo 'CONFIG_IB=y' >> .config
           echo 'CONFIG_IB_STANDALONE=y' >> .config
-          # echo 'CONFIG_SDK=y' >> .config
-          # echo 'CONFIG_MAKE_TOOLCHAIN=y' >> .config
+          echo 'CONFIG_SDK=y' >> .config
+          echo 'CONFIG_MAKE_TOOLCHAIN=y' >> .config
           # echo 'CONFIG_ALL_NONSHARED=y' >> .config
           # echo 'CONFIG_ALL_KMODS=y' >> .config
           # echo 'CONFIG_ALL=y' >> .config
