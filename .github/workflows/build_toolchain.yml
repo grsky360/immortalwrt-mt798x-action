@@ -7,12 +7,6 @@ on:
         type: choice
         options:
           - padavanonly/immortalwrt-mt798x
-      device:
-        description: device
-        required: true
-        type: choice
-        options:
-          - xiaomi_redmi-router-ax6000
       ref-version:
         description: ref version
         required: false
@@ -20,6 +14,7 @@ on:
         type: string
       prefer-config:
         default: "mt7986-ax6000-mtwifi-cfg.config"
+        type: string
 
 env:
   TZ: Asia/Shanghai
@@ -32,11 +27,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@master
 
-      - name: setup env
-        run: |
-          sudo mkdir -p $WORKSPACE
-          sudo chown $USER:$GROUPS $WORKSPACE
-          sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.eu.org/init_build_environment.sh)'
+      - uses: ./.github/actions/setup-env
 
       - name: clone source
         working-directory: ${{ env.WORKSPACE }}
@@ -53,22 +44,13 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: configure device (defconfig)
+      - name: configure device
         working-directory: ${{ env.WORKSPACE }}/openwrt
         run: |
           echo 'CONFIG_TARGET_mediatek=y' >> .config
           echo 'CONFIG_TARGET_mediatek_mt7986=y' >> .config
-          echo 'CONFIG_MAKE_TOOLCHAIN=y' >> .config
           make defconfig
           cat .config
-
-      # - name: download package
-      #   working-directory: ${{ env.WORKSPACE }}/openwrt
-      #   run: |
-      #     make download -j$(nproc)
-      #     find dl -size -1024c -exec ls -l {} \;
-      #     find dl -size -1024c -exec rm -f {} \;
-      #     make download -j$(nproc)
 
       - name: build
         working-directory: ${{ env.WORKSPACE }}/openwrt
@@ -76,8 +58,14 @@ jobs:
           make tools/install -j$(nproc) || make tools/install -j1 V=s
           make toolchain/install -j$(nproc) || make toolchain/install -j1 V=s
 
+      - name: compress
+        working-directory: ${{ env.WORKSPACE }}/openwrt
+        run: |
+          tar -czvf staging_dir.tar.gz staging_dir
+
       - name: upload
         uses: actions/upload-artifact@v4
         with:
-          name: ImmortalWrt
-          path: ${{ env.WORKSPACE }}/openwrt/bin/targets
+          name: toolchain
+          path: |
+            ${{ env.WORKSPACE }}/openwrt/staging_dir.tar.gz

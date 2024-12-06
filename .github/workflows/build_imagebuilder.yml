@@ -20,6 +20,7 @@ on:
         type: string
       prefer-config:
         default: "mt7986-ax6000-mtwifi-cfg.config"
+        type: string
 
 env:
   TZ: Asia/Shanghai
@@ -32,11 +33,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@master
 
-      - name: setup env
-        run: |
-          sudo mkdir -p $WORKSPACE
-          sudo chown $USER:$GROUPS $WORKSPACE
-          sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.eu.org/init_build_environment.sh)'
+      - uses: ./.github/actions/setup-env
 
       - name: clone source
         working-directory: ${{ env.WORKSPACE }}
@@ -60,13 +57,17 @@ jobs:
           sed -i '/^CONFIG_TARGET_MULTI_PROFILE.*/d' .config
           sed -i '/^CONFIG_TARGET_DEVICE_.*/d' .config
           sed -i '/^CONFIG_TARGET_PER_DEVICE_ROOTFS.*/d' .config
-          echo 'CONFIG_TARGET_mediatek_mt7986_DEVICE_${{ inputs.device }}' >> .config
+          echo 'CONFIG_TARGET_mediatek_mt7986_DEVICE_${{ inputs.device }}=y' >> .config
           echo 'CONFIG_IB=y' >> .config
           echo 'CONFIG_IB_STANDALONE=y' >> .config
-          echo 'CONFIG_SDK=y' >> .config
-          echo 'CONFIG_MAKE_TOOLCHAIN=y' >> .config
           make defconfig
           cat .config
+
+      - name: build toolchain
+        working-directory: ${{ env.WORKSPACE }}/openwrt
+        run: |
+          make tools/install -j$(nproc) || make tools/install -j1 V=s
+          make toolchain/install -j$(nproc) || make toolchain/install -j1 V=s
 
       - name: download package
         working-directory: ${{ env.WORKSPACE }}/openwrt
